@@ -614,6 +614,17 @@ Video:
     bandwidth: "Vitesse de connexion"
     buffered: "En tampon"
     out of: "sur"
+    Player Dimensions: Dimensions du lecteur
+    Bitrate: Débit binaire
+    Volume: Volume
+    Mimetype: Type de médias
+    Video statistics are not available for legacy videos: Les statistiques vidéo ne
+      sont pas disponibles pour les anciennes vidéos
+    Resolution: Résolution
+    Bandwidth: Bande passante
+    Video ID: Identifiant vidéo
+    Buffered: En mémoire tampon
+    Dropped / Total Frames: Images perdues / Nombre total d’images
   Premieres on: Première le
 Videos:
   #& Sort By
@@ -716,7 +727,7 @@ Canceled next video autoplay: 'Annuler la lecture automatique'
 
 Yes: 'Oui'
 No: 'Non'
-Locale Name: Français
+Locale Name: français
 Profile:
   $ is now the active profile: $ est maintenant le profil actif
   Your default profile has been changed to your primary profile: Votre profil par
