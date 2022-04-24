@@ -126,21 +126,7 @@ export default Vue.extend({
             'qualitySelector',
             'fullscreenToggle'
           ]
-        },
-        playbackRates: [
-          0.25,
-          0.5,
-          0.75,
-          1,
-          1.25,
-          1.5,
-          1.75,
-          2,
-          2.25,
-          2.5,
-          2.75,
-          3
-        ]
+        }
       }
     }
   },
@@ -200,6 +186,27 @@ export default Vue.extend({
 
     displayVideoPlayButton: function() {
       return this.$store.getters.getDisplayVideoPlayButton
+    },
+
+    maxVideoPlaybackRate: function () {
+      return parseInt(this.$store.getters.getMaxVideoPlaybackRate)
+    },
+
+    videoPlaybackRateInterval: function () {
+      return parseFloat(this.$store.getters.getVideoPlaybackRateInterval)
+    },
+
+    playbackRates: function () {
+      const playbackRates = []
+      let i = this.videoPlaybackRateInterval
+
+      while (i <= this.maxVideoPlaybackRate) {
+        playbackRates.push(i)
+        i = i + this.videoPlaybackRateInterval
+        i = parseFloat(i.toFixed(2))
+      }
+
+      return playbackRates
     }
   },
   watch: {
@@ -215,6 +222,8 @@ export default Vue.extend({
     if (volume !== null) {
       this.volume = volume
     }
+
+    this.dataSetup.playbackRates = this.playbackRates
 
     this.createFullWindowButton()
     this.createLoopButton()
@@ -983,7 +992,7 @@ export default Vue.extend({
     changePlayBackRate: function (rate) {
       const newPlaybackRate = (this.player.playbackRate() + rate).toFixed(2)
 
-      if (newPlaybackRate >= 0.25 && newPlaybackRate <= 8) {
+      if (newPlaybackRate >= this.videoPlaybackRateInterval && newPlaybackRate <= this.maxVideoPlaybackRate) {
         this.player.playbackRate(newPlaybackRate)
       }
     },
@@ -996,7 +1005,7 @@ export default Vue.extend({
       if (this.maxFramerate === 60 && quality.height >= 480) {
         for (let i = 0; i < this.adaptiveFormats.length; i++) {
           if (this.adaptiveFormats[i].bitrate === quality.bitrate) {
-            fps = this.adaptiveFormats[i].fps
+            fps = this.adaptiveFormats[i].fps ? this.adaptiveFormats[i].fps : 30
             break
           }
         }
@@ -1192,6 +1201,10 @@ export default Vue.extend({
               const adaptiveFormat = this.adaptiveFormats.find((format) => {
                 return format.bitrate === quality.bitrate
               })
+
+              if (typeof adaptiveFormat === 'undefined') {
+                return
+              }
 
               this.activeAdaptiveFormats.push(adaptiveFormat)
 
@@ -1445,7 +1458,7 @@ export default Vue.extend({
       const droppedFrames = this.playerStats.videoPlaybackQuality.droppedVideoFrames
       const totalFrames = this.playerStats.videoPlaybackQuality.totalVideoFrames
       const frames = `${droppedFrames} / ${totalFrames}`
-      const resolution = `${this.selectedResolution}@${this.selectedFPS}fps`
+      const resolution = this.selectedResolution === 'auto' ? 'auto' : `${this.selectedResolution}@${this.selectedFPS}fps`
       const playerDimensions = `${this.playerStats.playerDimensions.width}x${this.playerStats.playerDimensions.height}`
       const statsArray = [
         [this.$t('Video.Stats.Video ID'), this.videoId],
@@ -1493,7 +1506,7 @@ export default Vue.extend({
             // J Key
             // Rewind by 2x the time-skip interval (in seconds)
             event.preventDefault()
-            this.changeDurationBySeconds(-this.defaultSkipInterval * 2)
+            this.changeDurationBySeconds(-this.defaultSkipInterval * this.player.playbackRate() * 2)
             break
           case 75:
             // K Key
@@ -1505,19 +1518,19 @@ export default Vue.extend({
             // L Key
             // Fast-Forward by 2x the time-skip interval (in seconds)
             event.preventDefault()
-            this.changeDurationBySeconds(this.defaultSkipInterval * 2)
+            this.changeDurationBySeconds(this.defaultSkipInterval * this.player.playbackRate() * 2)
             break
           case 79:
             // O Key
             // Decrease playback rate by 0.25x
             event.preventDefault()
-            this.changePlayBackRate(-0.25)
+            this.changePlayBackRate(-this.videoPlaybackRateInterval)
             break
           case 80:
             // P Key
             // Increase playback rate by 0.25x
             event.preventDefault()
-            this.changePlayBackRate(0.25)
+            this.changePlayBackRate(this.videoPlaybackRateInterval)
             break
           case 70:
             // F Key
@@ -1553,18 +1566,23 @@ export default Vue.extend({
             // Left Arrow Key
             // Rewind by the time-skip interval (in seconds)
             event.preventDefault()
-            this.changeDurationBySeconds(-this.defaultSkipInterval * 1)
+            this.changeDurationBySeconds(-this.defaultSkipInterval * this.player.playbackRate())
             break
           case 39:
             // Right Arrow Key
             // Fast-Forward by the time-skip interval (in seconds)
             event.preventDefault()
-            this.changeDurationBySeconds(this.defaultSkipInterval * 1)
+            this.changeDurationBySeconds(this.defaultSkipInterval * this.player.playbackRate())
             break
           case 73:
             // I Key
             event.preventDefault()
-            this.toggleShowStatsModal()
+            // Toggle Picture in Picture Mode
+            if (!this.player.isInPictureInPicture()) {
+              this.player.requestPictureInPicture()
+            } else if (this.player.isInPictureInPicture()) {
+              this.player.exitPictureInPicture()
+            }
             break
           case 49:
             // 1 Key
@@ -1638,12 +1656,8 @@ export default Vue.extend({
             break
           case 68:
             // D Key
-            // Toggle Picture in Picture Mode
-            if (!this.player.isInPictureInPicture()) {
-              this.player.requestPictureInPicture()
-            } else if (this.player.isInPictureInPicture()) {
-              this.player.exitPictureInPicture()
-            }
+            event.preventDefault()
+            this.toggleShowStatsModal()
             break
           case 27:
             // esc Key
